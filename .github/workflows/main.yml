@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run a one-line script
+        run: brew install ninja cmake libarchive
+
+      - name: Check out LLVM 
+        uses: actions/checkout@v4
+        with:
+          repository: "llvm/llvm-project"
+          path: llvm-project 
+
+      - name: Run a multi-line script
+        run: |
+          cmake -B build -G Ninja -DCMAKE_INSTALL_PREFIX=$PWD/install \
+            -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DLLVM_ENABLE_PROJECTS="compiler-rt;libc" \
+            -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-apple-darwin \
+            -DLIBC_TARGET_TRIPLE=x86_64-apple-darwin \
+            -DLLVM_LIBC_FULL_BUILD=ON
+          ninja -C build install/strip
+      
+      - name: Compress artifacts
+        run: |
+          bsdtar --zstd --options "zstd:threads=4,zstd:compression-level=22" -cvf llvm.tar.zst -C install .
+      
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4.3.1
+        with:
+          path: llvm.tar.zst
+          compression-level: 0
