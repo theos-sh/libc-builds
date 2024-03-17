@@ -26,6 +26,7 @@ jobs:
       - name: Run a multi-line script
         run: |
           cmake -B build -G Ninja -DCMAKE_INSTALL_PREFIX=$PWD/install \
+            -S llvm-project/llvm \
             -DCMAKE_BUILD_TYPE=MinSizeRel \
             -DLLVM_ENABLE_PROJECTS="compiler-rt;libc" \
             -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-apple-darwin \
