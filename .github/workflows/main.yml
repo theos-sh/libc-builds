@@ -1,21 +1,24 @@
 name: CI
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: macos-14
+  build-windows:
+    runs-on: windows-latest 
+    defaults:
+      run:
+        shell: msys2 {0}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Run a one-line script
-        run: brew install ninja cmake libarchive
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANG64
+          update: true
+          install: git mingw-w64-clang-x86_64-clang mingw-w64-clang-x86_64-lld ninja cmake libarchive
 
       - name: Check out LLVM 
         uses: actions/checkout@v4
@@ -30,7 +33,9 @@ jobs:
             -DCMAKE_BUILD_TYPE=MinSizeRel \
             -DLLVM_ENABLE_PROJECTS="clang" \
             -DLLVM_ENABLE_RUNTIMES="compiler-rt;libc" \
-            -DLLVM_RUNTIME_TARGETS="x86_64-unknown-linux-gnu" \
+            -DLLVM_RUNTIME_TARGETS="x86_64-unknown-windows-gnu" \
+            -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
+            -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=ON \
             -DLLVM_LIBC_FULL_BUILD=ON
           ninja -C build install/strip
       
